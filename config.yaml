@@ -1,0 +1,6 @@
+mongo:
+  user: yuuki
+  password: 123456
+  database: game
+  url: 192.168.56.101
+  port: 27017
