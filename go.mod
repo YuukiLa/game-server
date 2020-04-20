@@ -7,5 +7,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	go.mongodb.org/mongo-driver v1.3.2
+	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5
 	gopkg.in/yaml.v2 v2.2.8
 )

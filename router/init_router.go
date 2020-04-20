@@ -8,5 +8,5 @@ var (
 
 func InitRouter(r *gin.Engine) {
 	apiRouter = r.Group("/api")
-	initWxRouter()
+	initUserRouter()
 }
