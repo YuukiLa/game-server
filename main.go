@@ -6,8 +6,10 @@ import (
 	"github/com/yuuki80code/game-server/cmd_router"
 	"github/com/yuuki80code/game-server/config"
 	"github/com/yuuki80code/game-server/mongo"
+	"github/com/yuuki80code/game-server/redis"
 	"github/com/yuuki80code/game-server/router"
 	"github/com/yuuki80code/game-server/ws"
+	"log"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
@@ -18,7 +20,12 @@ func main() {
 	config.Load()
 	//初始化mongo
 	mongo.InitMongo()
-
+	//初始化redis
+	redis.InitRedis()
+	err := redis.Cache.Set("test", "test", 100)
+	if err != nil {
+		log.Print(err)
+	}
 	hub := ws.NewHub()
 	go hub.Run()
 	//初始化cmd

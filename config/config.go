@@ -10,10 +10,15 @@ type Config struct {
 	Mongo struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
-		Database string `yaml:database`
-		Url      string `yaml:url`
-		Port     string `yaml:port`
+		Database string `yaml:"database""`
+		Url      string `yaml:"url"`
+		Port     string `yaml:"port""`
 	} `yaml:"mongo"`
+	Redis struct {
+		Url      string `yaml:"url"`
+		Password string `yaml:"password"`
+		Db       int    `yaml:"db"`
+	} `yaml:"redis"`
 }
 
 var Configer *Config

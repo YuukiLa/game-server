@@ -4,3 +4,7 @@ mongo:
   database: game
   url: 192.168.56.101
   port: 27017
+redis:
+  url: 127.0.0.1:6379
+  password:
+  db: 2
