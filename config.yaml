@@ -2,7 +2,7 @@ mongo:
   user: yuuki
   password: 123456
   database: game
-  url: 192.168.56.101
+  url: 127.0.0.1
   port: 27017
 redis:
   url: 127.0.0.1:6379

@@ -41,3 +41,13 @@ func (this *UserController) Login(c *gin.Context) {
 	}
 	util.SendDataSuccessResp(c, resp)
 }
+
+func (this *UserController) Userinfo(c *gin.Context) {
+	account := GetUserAccount(c)
+	resp, err := this.UserService.UserInfo(account)
+	if err != nil {
+		util.SendSimpleFailResp(c, 401, "用户不存在")
+		return
+	}
+	util.SendDataSuccessResp(c, resp)
+}

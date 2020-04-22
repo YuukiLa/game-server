@@ -49,3 +49,16 @@ func (this *UserService) Login(account, password string) (*response.LoginResp, e
 	}
 	return &resp, nil
 }
+
+func (this *UserService) UserInfo(account string) (*response.UserInfoResp, error) {
+	user := new(model.UserModel)
+	err := user.FindUserByAccount(account)
+	if err != nil {
+		return nil, errors.New("账号不存在")
+	}
+	userInfoResp := response.UserInfoResp{
+		Username: user.Username,
+		Avatar:   user.Avatar,
+	}
+	return &userInfoResp, nil
+}
