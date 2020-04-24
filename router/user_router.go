@@ -11,4 +11,6 @@ func initUserRouter() {
 	apiRouter.POST("/register", UserController.Register)
 	apiRouter.POST("/login", UserController.Login)
 	apiRouter.GET("/user/info", middleware.CheckToken(), UserController.Userinfo)
+	apiRouter.PUT("/user/updateName", middleware.CheckToken(), UserController.UpdateUserName)
+	apiRouter.PUT("/user/updateAvatar", middleware.CheckToken(), UserController.UpdateUserAvatar)
 }

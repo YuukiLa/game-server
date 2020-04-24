@@ -35,3 +35,21 @@ func (m *UserModel) FindUserByAccount(account string) error {
 	err := m.getCollection().FindOne(context.TODO(), filter).Decode(m)
 	return err
 }
+
+func (m *UserModel) UpdateUserName(account string, username string) error {
+	filter := bson.D{{"account", account}}
+	update := bson.D{{"$set", bson.D{
+		{"username", username},
+	}}}
+	_, err := m.getCollection().UpdateOne(context.TODO(), filter, update)
+	return err
+}
+
+func (m *UserModel) UpdateUserAvatar(account string, avatar string) error {
+	filter := bson.D{{"account", account}}
+	update := bson.D{{"$set", bson.D{
+		{"avatar", avatar},
+	}}}
+	_, err := m.getCollection().UpdateOne(context.TODO(), filter, update)
+	return err
+}

@@ -51,3 +51,25 @@ func (this *UserController) Userinfo(c *gin.Context) {
 	}
 	util.SendDataSuccessResp(c, resp)
 }
+
+func (this *UserController) UpdateUserName(c *gin.Context) {
+	account := GetUserAccount(c)
+	username := c.PostForm("username")
+	err := this.UserService.UpdateUserName(account, username)
+	if err != nil {
+		util.SendSimpleFailResp(c, 400, err.Error())
+		return
+	}
+	util.SendSimpleSuccessResp(c, "修改成功")
+}
+
+func (this *UserController) UpdateUserAvatar(c *gin.Context) {
+	account := GetUserAccount(c)
+	avatar := c.PostForm("avatar")
+	err := this.UserService.UpdateAvatar(account, avatar)
+	if err != nil {
+		util.SendSimpleFailResp(c, 400, err.Error())
+		return
+	}
+	util.SendSimpleSuccessResp(c, "修改成功")
+}
