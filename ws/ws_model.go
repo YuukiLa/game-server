@@ -1,7 +1,7 @@
 package ws
 
 type RoomBroadcast struct {
-	RoomID string
-	Data interface{}
-	ClientID string
+	RoomID   string `json:"roomId"`
+	Data     Result `json:"data"`
+	ClientID string `json:"clientId"`
 }

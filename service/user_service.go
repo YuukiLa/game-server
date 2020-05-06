@@ -62,3 +62,13 @@ func (this *UserService) UserInfo(account string) (*response.UserInfoResp, error
 	}
 	return &userInfoResp, nil
 }
+
+func (this *UserService) UpdateUsername(account, username string) error {
+	err := new(model.UserModel).UpdateUsername(account, username)
+	return err
+}
+
+func (this *UserService) UpdateAvatar(account, avatar string) error {
+	err := new(model.UserModel).UpdateAvatar(account, avatar)
+	return err
+}

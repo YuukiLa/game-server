@@ -5,6 +5,7 @@ import (
 	"github/com/yuuki80code/game-server/controller/request"
 	"github/com/yuuki80code/game-server/service"
 	"github/com/yuuki80code/game-server/util"
+	"log"
 )
 
 type UserController struct {
@@ -50,4 +51,35 @@ func (this *UserController) Userinfo(c *gin.Context) {
 		return
 	}
 	util.SendDataSuccessResp(c, resp)
+}
+
+func (this *UserController) UpdateUserName(c *gin.Context) {
+	account := GetUserAccount(c)
+	if username, ok := c.GetPostForm("username"); ok {
+		err := this.UserService.UpdateUsername(account, username)
+		if err != nil {
+			log.Println(err)
+			util.SendSimpleFailResp(c, 500, "修改失败")
+			return
+		}
+	} else {
+		util.SendSimpleFailResp(c, 400, "参数错误")
+		return
+	}
+	util.SendSimpleSuccessResp(c, "修改成功")
+}
+
+func (this *UserController) UpdateAvatar(c *gin.Context) {
+	account := GetUserAccount(c)
+	if avatar, ok := c.GetPostForm("avatar"); ok {
+		err := this.UserService.UpdateAvatar(account, avatar)
+		if err != nil {
+			util.SendSimpleFailResp(c, 500, "修改失败")
+			return
+		}
+	} else {
+		util.SendSimpleFailResp(c, 400, "参数错误")
+		return
+	}
+	util.SendSimpleSuccessResp(c, "修改成功")
 }

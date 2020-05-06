@@ -1,5 +1,5 @@
 package cmd_router
 
-func InitRouter()  {
-	initTest()
+func InitRouter() {
+	initRoomRouter()
 }

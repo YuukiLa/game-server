@@ -23,10 +23,7 @@ func main() {
 	mongo.InitMongo()
 	//初始化redis
 	redis.InitRedis()
-	err := redis.Cache.Set("test", "test", 100)
-	if err != nil {
-		log.Print(err)
-	}
+
 	hub := ws.NewHub()
 	go hub.Run()
 	//初始化cmd
@@ -55,7 +52,7 @@ func Cors() gin.HandlerFunc {
 
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token")
-		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "POST, GET,PUT, DELETE,OPTIONS")
 		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
 		c.Header("Access-Control-Allow-Credentials", "true")
 
@@ -66,4 +63,9 @@ func Cors() gin.HandlerFunc {
 		// 处理请求
 		c.Next()
 	}
+}
+
+func init() {
+	log.SetPrefix("【game-server】")
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
 }

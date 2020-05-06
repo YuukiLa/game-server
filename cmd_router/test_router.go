@@ -5,7 +5,7 @@ import "github/com/yuuki80code/game-server/ws"
 func initTest() {
 	ws.AddHandler("1", func(c *ws.Context) {
 		c.Client.RoomID = "123"
-		err:=c.Client.EnterRoom()
+		err := c.Client.EnterRoom()
 		if err != nil {
 			c.SendString(err.Error())
 			return
@@ -23,10 +23,10 @@ func initTest() {
 		}
 		roomBoradcast := ws.RoomBroadcast{
 			RoomID: c.Client.RoomID,
-			Data:   c.Data,
+			//Data:   c.Data,
 			ClientID: c.Client.ID,
 		}
-		c.Client.RoomBroadcast(roomBoradcast)
+		c.Client.RoomBroadcastAll(roomBoradcast)
 	})
 	//ws.AddHandler("4", func(c *ws.Context) {
 	//	if c.Client.RoomID == "" {

@@ -3,9 +3,8 @@ package ws
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github/com/yuuki80code/game-server/util"
 	"log"
 	"net/http"
 	"time"
@@ -51,27 +50,17 @@ func (c *Client) RoomBroadcast(data RoomBroadcast) {
 	c.hub.roomBroadcast <- data
 }
 
+func (c *Client) RoomBroadcastAll(data RoomBroadcast) {
+	c.hub.roomBroadcastAll <- data
+}
+
 func (c *Client) EnterRoom() error {
-	rooms := c.hub.rooms[c.RoomID]
-	m := genFloorMap()
-	if len(rooms) < 2 {
-		for _, v := range rooms {
-			m=append(m[:v.Floor],m[v.Floor:]...)
-		}
-		c.hub.enterRoom <- c
-	} else {
-		return errors.New("房间已满")
-	}
+	c.hub.enterRoom <- c
 	return nil
 }
 
 func (c *Client) UnEnterRoom() {
 	c.hub.exitRoom <- c
-}
-
-func genFloorMap() []int {
-	m := []int{1,2,3,4,5}
-	return m
 }
 
 func (c *Client) readPump() {
@@ -87,15 +76,18 @@ func (c *Client) readPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
+				c.hub.unregister <- c
+				return
 			}
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-
+		log.Println("client invoke")
 		var ctx Context
 		json.Unmarshal(message, &ctx)
 		ctx.Client = c
 		invoke(&ctx)
+
 		//c.hub.broadcast <- message
 	}
 }
@@ -114,6 +106,7 @@ func (c *Client) writePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
+			log.Printf("send:%v", ok)
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -156,7 +149,14 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{ID: uuid.New().String(), hub: hub, conn: conn, send: make(chan []byte, 256)}
+	token := r.URL.Query().Get("token")
+	account, err := util.Dncrypt(token)
+	if err != nil {
+		w.Write([]byte("token无效"))
+		return
+	}
+	log.Println("接收到请求升级websocket")
+	client := &Client{ID: account, hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

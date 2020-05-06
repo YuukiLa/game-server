@@ -103,8 +103,6 @@ func AesCBCDncrypt(encryptData []byte) ([]byte, error) {
 	iv := encryptData[:blockSize]
 
 	encryptData = encryptData[blockSize:]
-	fmt.Println("encryptData=", encryptData)
-	fmt.Println(len(encryptData) % blockSize)
 
 	// CBC mode always works in whole blocks.
 	if len(encryptData)%blockSize != 0 {

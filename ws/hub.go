@@ -19,42 +19,61 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
-	roomBroadcast chan RoomBroadcast
+	roomBroadcast    chan RoomBroadcast
+	roomBroadcastAll chan RoomBroadcast
 
 	rooms map[string][]*Client
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		register:      make(chan *Client),
-		unregister:    make(chan *Client),
-		enterRoom:     make(chan *Client),
-		exitRoom:      make(chan *Client),
-		roomBroadcast: make(chan RoomBroadcast),
-		clients:       make(map[string]*Client),
-		rooms:         make(map[string][]*Client),
+		register:         make(chan *Client),
+		unregister:       make(chan *Client),
+		enterRoom:        make(chan *Client),
+		exitRoom:         make(chan *Client),
+		roomBroadcast:    make(chan RoomBroadcast),
+		roomBroadcastAll: make(chan RoomBroadcast),
+		clients:          make(map[string]*Client),
+		rooms:            make(map[string][]*Client),
 	}
 }
 
 func (h *Hub) Run() {
 	defer func() {
-		if err := recover();err!=nil{
-			log.Println("hub error",err)
+		if err := recover(); err != nil {
+			log.Println("hub error", err)
 		}
 	}()
 	for {
 		select {
 		case client := <-h.register:
+			log.Println("链接")
+			if c, ok := h.clients[client.ID]; ok {
+				log.Println("有未断开的连接")
+				h.unregister <- c
+			}
 			h.clients[client.ID] = client
+
 		case client := <-h.unregister:
-			if _, ok := h.clients[client.ID]; ok {
-				if client.RoomID!="" {
-					h.exitRoom <- client
+			log.Printf("client: %+v", client)
+			log.Printf("clients:%+v,%+v", h.clients[client.ID])
+			if c, ok := h.clients[client.ID]; ok {
+				log.Println("关闭1")
+				if c.RoomID != "" {
+					log.Println("关闭2")
+					go func() {
+						h.exitRoom <- c
+					}()
 				}
-				delete(h.clients, client.ID)
-				close(client.send)
+				log.Println("关闭3")
+				delete(h.clients, c.ID)
+				log.Println("关闭4")
+				close(c.send)
+				log.Println("关闭5")
+				log.Printf("关闭后的clients:%+v", h.clients)
 			}
 		case client := <-h.enterRoom:
+			log.Println("进入房间")
 			h.rooms[client.RoomID] = append(h.rooms[client.RoomID], client)
 		case client := <-h.exitRoom:
 			for i, c := range h.rooms[client.RoomID] {
@@ -71,6 +90,18 @@ func (h *Hub) Run() {
 						data, _ := json.Marshal(roomBroadcast.Data)
 						client.send <- data
 					}
+				}
+			}
+		case roomBroadcast := <-h.roomBroadcastAll:
+			log.Println("广播所有")
+			log.Println(roomBroadcast.RoomID)
+			log.Printf("%+v", h.rooms)
+			if clients, ok := h.rooms[roomBroadcast.RoomID]; ok {
+				log.Printf("%+v", ok)
+				for _, client := range clients {
+					data, _ := json.Marshal(roomBroadcast.Data)
+					client.send <- data
+
 				}
 			}
 		}
