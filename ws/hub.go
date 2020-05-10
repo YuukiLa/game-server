@@ -21,8 +21,8 @@ type Hub struct {
 
 	roomBroadcast    chan RoomBroadcast
 	roomBroadcastAll chan RoomBroadcast
-
-	rooms map[string][]*Client
+	roomSendUser     chan RoomBroadcast
+	rooms            map[string][]*Client
 }
 
 func NewHub() *Hub {
@@ -33,6 +33,7 @@ func NewHub() *Hub {
 		exitRoom:         make(chan *Client),
 		roomBroadcast:    make(chan RoomBroadcast),
 		roomBroadcastAll: make(chan RoomBroadcast),
+		roomSendUser:     make(chan RoomBroadcast),
 		clients:          make(map[string]*Client),
 		rooms:            make(map[string][]*Client),
 	}
@@ -87,6 +88,16 @@ func (h *Hub) Run() {
 			if clients, ok := h.rooms[roomBroadcast.RoomID]; ok {
 				for _, client := range clients {
 					if client.ID != roomBroadcast.ClientID {
+						data, _ := json.Marshal(roomBroadcast.Data)
+						client.send <- data
+					}
+				}
+			}
+		case roomBroadcast := <-h.roomSendUser:
+			log.Println("给指定用户发送")
+			if clients, ok := h.rooms[roomBroadcast.RoomID]; ok {
+				for _, client := range clients {
+					if client.ID == roomBroadcast.ClientID {
 						data, _ := json.Marshal(roomBroadcast.Data)
 						client.send <- data
 					}

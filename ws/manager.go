@@ -25,12 +25,7 @@ func (c *Context) Bind(model interface{}) error {
 }
 
 func (c *Context) Send(data interface{}) {
-	var result = Result{
-		CMD:  c.CMD,
-		Data: data,
-		Msg:  "",
-	}
-	bytes, _ := json.Marshal(result)
+	bytes, _ := json.Marshal(data)
 	c.Client.send <- bytes
 }
 func (c *Context) SendString(data string) {
@@ -48,8 +43,12 @@ func (c *Context) SendRoomBroadcastAll(data RoomBroadcast) {
 	c.Client.RoomBroadcastAll(data)
 }
 
+//对房间具体用户下发信息
+func (c *Context) SendRoomUser(data RoomBroadcast) {
+	c.Client.RoomSendUser(data)
+}
+
 func invoke(c *Context) {
-	log.Println("manage invoke")
 	if f, ok := Handlers[c.CMD]; ok {
 		f(c)
 	}

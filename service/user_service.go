@@ -57,6 +57,7 @@ func (this *UserService) UserInfo(account string) (*response.UserInfoResp, error
 		return nil, errors.New("账号不存在")
 	}
 	userInfoResp := response.UserInfoResp{
+		Account:  user.Account,
 		Username: user.Username,
 		Avatar:   user.Avatar,
 	}

@@ -54,6 +54,10 @@ func (c *Client) RoomBroadcastAll(data RoomBroadcast) {
 	c.hub.roomBroadcastAll <- data
 }
 
+func (c *Client) RoomSendUser(data RoomBroadcast) {
+	c.hub.roomSendUser <- data
+}
+
 func (c *Client) EnterRoom() error {
 	c.hub.enterRoom <- c
 	return nil
