@@ -81,7 +81,7 @@ func (this *RoomController) EnterRoom(c *gin.Context) {
 		return
 	}
 	//err = cache.RPush(roomId,info)
-	_, err = cache.LPush(roomId, info).Result()
+	_, err = cache.RPush(roomId, info).Result()
 	if err != nil {
 		util.SendSimpleFailResp(c, 400, "加入房间失败")
 		return

@@ -95,37 +95,45 @@ func StartGame(c *ws.Context) {
 func GameParam(c *ws.Context) {
 	cache := redis.Cache
 	var roomConfig define.RoomConfig
+
 	roomId := c.Client.RoomID
 	if roomId == "" {
 
 	}
-	len, err := cache.LLen(roomId).Result()
-	if err != nil {
-
-	}
-	userStr, _ := cache.LIndex(roomId, int64(roomConfig.Round-1)%len).Result()
-	var user response.UserInfoResp
-	json.Unmarshal([]byte(userStr), &user)
-
-	result := ws.Result{
-		CMD:  "11000",
-		Data: roomConfig,
-		Msg:  "",
-	}
-	broadcast := ws.RoomBroadcast{
-		RoomID:   roomId,
-		Data:     result,
-		ClientID: user.Account,
-	}
-	log.Printf("获取到用户:%v", user)
-	c.SendRoomUser(broadcast)
-
 	roomConfigStr, _ := cache.HGet(define.RedisRoomConfigKey, roomId).Result()
 	json.Unmarshal([]byte(roomConfigStr), &roomConfig)
-	result.CMD = "10011"
-	roomConfig.CurrWord = ""
-	result.Data = roomConfig
-	broadcast.Data = result
-	c.SendRoomBroadcast(broadcast)
+	//len, err := cache.LLen(roomId).Result()
+	//if err != nil {
+	//
+	//}
+	//userStr, _ := cache.LIndex(roomId, int64(roomConfig.Round-1)%len).Result()
+	//var user response.UserInfoResp
+	//json.Unmarshal([]byte(userStr), &user)
+	if c.Client.ID == roomConfig.CurrUser {
+		result := ws.Result{
+			CMD:  "11000",
+			Data: roomConfig,
+			Msg:  "",
+		}
+		broadcast := ws.RoomBroadcast{
+			RoomID:   roomId,
+			Data:     result,
+			ClientID: c.Client.ID,
+		}
+		c.SendRoomUser(broadcast)
+	} else {
+		roomConfig.CurrWord = ""
+		result := ws.Result{
+			CMD:  "10011",
+			Data: roomConfig,
+			Msg:  "",
+		}
+		broadcast := ws.RoomBroadcast{
+			RoomID:   roomId,
+			Data:     result,
+			ClientID: c.Client.ID,
+		}
+		c.SendRoomUser(broadcast)
+	}
 
 }
