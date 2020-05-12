@@ -8,5 +8,6 @@ import (
 func initRoomRouter() {
 	ws.AddHandler("10001", handler.EnterRoom)
 	ws.AddHandler("10010", handler.StartGame)
+	ws.AddHandler("10008", handler.ExitRoom)
 
 }

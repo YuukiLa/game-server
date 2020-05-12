@@ -5,6 +5,7 @@ import (
 	"github/com/yuuki80code/game-server/cmd_router/handler/model"
 	"github/com/yuuki80code/game-server/config/define"
 	"github/com/yuuki80code/game-server/controller/response"
+	model2 "github/com/yuuki80code/game-server/mongo/model"
 	"github/com/yuuki80code/game-server/redis"
 	"github/com/yuuki80code/game-server/ws"
 	"log"
@@ -73,10 +74,21 @@ func StartGame(c *ws.Context) {
 	roomConfigStr, _ := cache.HGet(define.RedisRoomConfigKey, roomId).Result()
 	json.Unmarshal([]byte(roomConfigStr), &roomConfig)
 	if c.Client.ID == roomConfig.Master {
+
+		len, _ := cache.LLen(roomId).Result()
+
 		roomConfig.Status = 1
 		roomConfig.CurrUser = c.Client.ID
-		roomConfig.CurrWord = "马"
+
 		roomConfig.Round = 1
+		roomConfig.AllRound = int(len)
+
+		words, err := new(model2.WordModel).GetRandomWord(len * 2)
+		if err != nil {
+			log.Println("获取词失败")
+		}
+		roomConfig.AllWord = words
+		roomConfig.CurrWord = words[roomConfig.Round-1].Word
 		cache.HSet(define.RedisRoomConfigKey, roomId, roomConfig)
 		result := ws.Result{
 			CMD:  "10010",
@@ -112,7 +124,7 @@ func GameParam(c *ws.Context) {
 	if c.Client.ID == roomConfig.CurrUser {
 		result := ws.Result{
 			CMD:  "11000",
-			Data: roomConfig,
+			Data: model.CurrPlayer{CurrWord: roomConfig.CurrWord},
 			Msg:  "",
 		}
 		broadcast := ws.RoomBroadcast{
@@ -124,9 +136,12 @@ func GameParam(c *ws.Context) {
 	} else {
 		roomConfig.CurrWord = ""
 		result := ws.Result{
-			CMD:  "10011",
-			Data: roomConfig,
-			Msg:  "",
+			CMD: "10011",
+			Data: model.OtherPlayer{
+				CurrUser: roomConfig.CurrUser,
+				Round:    roomConfig.Round,
+			},
+			Msg: "",
 		}
 		broadcast := ws.RoomBroadcast{
 			RoomID:   roomId,
@@ -136,4 +151,61 @@ func GameParam(c *ws.Context) {
 		c.SendRoomUser(broadcast)
 	}
 
+}
+
+func ExitRoom(c *ws.Context) {
+	cache := redis.Cache
+	var roomConfig define.RoomConfig
+
+	roomId := c.Client.RoomID
+	if roomId == "" {
+
+	}
+	roomConfigStr, _ := cache.HGet(define.RedisRoomConfigKey, roomId).Result()
+	json.Unmarshal([]byte(roomConfigStr), &roomConfig)
+	//解散房间
+	if roomConfig.Master == c.Client.ID {
+		cache.HDel(define.RedisRoomConfigKey, roomId)
+		cache.Del(roomId)
+		result := ws.Result{
+			CMD:  "10008",
+			Data: "{}",
+			Msg:  "",
+		}
+		broadcast := ws.RoomBroadcast{
+			RoomID:   roomId,
+			Data:     result,
+			ClientID: "",
+		}
+		c.SendRoomBroadcastAll(broadcast)
+	} else {
+		users := make([]response.UserInfoResp, 0)
+		data, err := cache.LRange(roomId, 0, -1).Result()
+		if err != nil {
+			log.Println(err)
+			c.SendString(err.Error())
+			return
+		}
+		cache.Del(roomId)
+		for _, value := range data {
+			var user response.UserInfoResp
+			json.Unmarshal([]byte(value), &user)
+			if user.Account != c.Client.ID {
+				users = append(users, user)
+				cache.RPush(roomId, user)
+			}
+		}
+
+		result := ws.Result{
+			CMD:  "10001",
+			Data: users,
+			Msg:  "",
+		}
+		broadcast := ws.RoomBroadcast{
+			RoomID:   roomId,
+			Data:     result,
+			ClientID: "",
+		}
+		c.SendRoomBroadcastAll(broadcast)
+	}
 }

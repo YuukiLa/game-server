@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github/com/yuuki80code/game-server/cmd_router/handler/model"
 	"github/com/yuuki80code/game-server/config/define"
+	"github/com/yuuki80code/game-server/controller/response"
 	"github/com/yuuki80code/game-server/redis"
 	"github/com/yuuki80code/game-server/ws"
 	"strings"
@@ -41,6 +42,15 @@ func Answer(c *ws.Context) {
 			danmu.IsAnswer = false
 		} else {
 			danmu.IsAnswer = true
+
+			if roomConfig.Round == roomConfig.AllRound*2 {
+				//最后一轮
+				defer doGameOver(c, roomConfig)
+			} else {
+				//进行下一轮
+				defer doNext(c, roomConfig)
+			}
+
 		}
 
 	} else {
@@ -49,7 +59,7 @@ func Answer(c *ws.Context) {
 
 	danmu.Danmu = strings.ReplaceAll(danmu.Danmu, roomConfig.CurrWord, "***")
 
-	roomBoradcast := ws.RoomBroadcast{
+	roomBroadcast := ws.RoomBroadcast{
 		RoomID: c.Client.RoomID,
 		Data: ws.Result{
 			CMD:  c.CMD,
@@ -59,6 +69,62 @@ func Answer(c *ws.Context) {
 		ClientID: c.Client.ID,
 	}
 
-	c.Client.RoomBroadcastAll(roomBoradcast)
+	c.Client.RoomBroadcastAll(roomBroadcast)
 
+}
+
+func doNext(c *ws.Context, roomConfig define.RoomConfig) {
+	cache := redis.Cache
+	//告诉下一个用户
+	roomConfig.Round += 1
+	userStr, _ := cache.LIndex(c.Client.RoomID, int64((roomConfig.Round-1)%roomConfig.AllRound)).Result()
+	var user response.UserInfoResp
+	json.Unmarshal([]byte(userStr), &user)
+	roomConfig.CurrUser = user.Account
+	roomConfig.CurrWord = roomConfig.AllWord[roomConfig.Round-1].Word
+	cache.HSet(define.RedisRoomConfigKey, c.Client.RoomID, roomConfig)
+	toNextUser := ws.RoomBroadcast{
+		RoomID: c.Client.RoomID,
+		Data: ws.Result{
+			CMD:  "11000",
+			Data: model.CurrPlayer{CurrWord: roomConfig.CurrWord},
+			Msg:  "",
+		},
+		ClientID: user.Account,
+	}
+	c.Client.RoomSendUser(toNextUser)
+
+	//通知其他用户
+	result := ws.Result{
+		CMD: "10011",
+		Data: model.OtherPlayer{
+			CurrUser: roomConfig.CurrUser,
+			Round:    roomConfig.Round,
+		},
+		Msg: "",
+	}
+	broadcast := ws.RoomBroadcast{
+		RoomID:   c.Client.RoomID,
+		Data:     result,
+		ClientID: user.Account,
+	}
+	c.Client.RoomBroadcast(broadcast)
+
+}
+
+func doGameOver(c *ws.Context, roomConfig define.RoomConfig) {
+	cache := redis.Cache
+	cache.HDel(define.RedisRoomConfigKey, c.Client.RoomID)
+	cache.Del(c.Client.RoomID)
+	//通知所有玩家游戏结束
+	result := ws.Result{
+		CMD:  "13000",
+		Data: "{}",
+		Msg:  "",
+	}
+	broadcast := ws.RoomBroadcast{
+		RoomID: c.Client.RoomID,
+		Data:   result,
+	}
+	c.Client.RoomBroadcastAll(broadcast)
 }

@@ -10,3 +10,12 @@ type Danmu struct {
 	Avatar   string `json:"avatar"`
 	IsAnswer bool   `json:"isAnswer"`
 }
+
+type OtherPlayer struct {
+	CurrUser string `json:"currUser"`
+	Round    int    `json:"round"`
+}
+
+type CurrPlayer struct {
+	CurrWord string `json:"currWord"`
+}
